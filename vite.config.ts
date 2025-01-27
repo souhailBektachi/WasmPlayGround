@@ -44,6 +44,12 @@ export default defineConfig({
   worker: {
     format: 'es',
     plugins: () => [wasm()],
+    rollupOptions: {
+      output: {
+        format: 'es',
+        entryFileNames: 'assets/[name].mjs'
+      }
+    }
   },
   build: {
     target: 'esnext',
@@ -54,14 +60,12 @@ export default defineConfig({
           wasmer: ['@wasmer/sdk']
         },
         format: 'es',
-        entryFileNames: 'assets/[name].[hash].mjs',
-        chunkFileNames: 'assets/[name].[hash].mjs',
-        assetFileNames: 'assets/[name].[hash][extname]'
+        assetFileNames: 'assets/[name].[ext]',
+        chunkFileNames: 'assets/[name]-[hash].mjs',
+        entryFileNames: 'assets/[name].mjs',
       }
     },
-    sourcemap: true,
-    outDir: 'dist',
-    emptyOutDir: true
+    sourcemap: true
   },
   optimizeDeps: {
     exclude: ['@wasmer/sdk'],
@@ -89,6 +93,5 @@ export default defineConfig({
   },
   preview: {
     headers
-  },
-  base: '/'
+  }
 })
