@@ -2,6 +2,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { useState } from 'react';
 import ClangService from './services/clang';
 import { useEditorStore } from './store/editorStore';
+import type { WasmInstance } from './types/global';
 
 import CEditor from './components/CEditor';
 import HtmlEditor from './components/htmlEditor';
@@ -43,23 +44,23 @@ function App() {
     <div className="h-screen bg-gradient-to-b from-[#1a1a1a] to-[#1e1e1e] flex flex-col overflow-hidden">
       <header className="px-6 py-3 border-b border-[#2d2d2d] bg-gradient-to-r from-[#1a1a1a] via-[#252525] to-[#1a1a1a] shadow-xl relative">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-        <div className="max-w-7xl mx-auto flex items-center justify-between relative">
+        <div className="relative flex items-center justify-between mx-auto max-w-7xl">
           <div className="flex items-center space-x-4 animate-fade-in">
             <div className="flex items-center gap-2">
               <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
               </svg>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-purple-500 bg-clip-text">
                 WASM Playground
               </h1>
             </div>
             <div className="h-6 w-px bg-gradient-to-b from-transparent via-[#2d2d2d] to-transparent mx-2" />
-            <span className="text-gray-400 text-sm">WebAssembly IDE</span>
+            <span className="text-sm text-gray-400">WebAssembly IDE</span>
           </div>
           
           <div className="flex items-center gap-4">
             <PackageDownloader />
-            <div className="group relative">
+            <div className="relative group">
               <button
                 onClick={handleRunCode}
                 disabled={isCompiling}
@@ -78,7 +79,7 @@ function App() {
                 <div className="flex items-center gap-2">
                   {isCompiling ? (
                     <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
@@ -95,8 +96,8 @@ function App() {
                   )}
                 </div>
               </button>
-              <div className="absolute bottom-full mb-2 hidden group-hover:block transition-opacity duration-200">
-                <div className="bg-gray-800 text-xs text-gray-200 px-2 py-1 rounded shadow-lg">
+              <div className="absolute hidden mb-2 transition-opacity duration-200 bottom-full group-hover:block">
+                <div className="px-2 py-1 text-xs text-gray-200 bg-gray-800 rounded shadow-lg">
                   {isCompiling ? 'Compiling your code...' : 'Compile and run your code'}
                 </div>
               </div>
@@ -106,7 +107,7 @@ function App() {
       </header>
 
       <PanelGroup direction="horizontal" className="flex-1 min-h-0">
-        <Panel defaultSizePercentage={50} className="flex flex-col overflow-hidden h-full">
+        <Panel defaultSizePercentage={50} className="flex flex-col h-full overflow-hidden">
           <Tabs
             tabs={[
               { id: 'c', label: 'C' },
@@ -134,7 +135,7 @@ function App() {
             activeTab={activeRightTab}
             onTabChange={setActiveRightTab}
           />
-          <div className="flex-1 flex">
+          <div className="flex flex-1">
             {activeRightTab === 'html' && <HtmlEditor />}
             {activeRightTab === 'preview' && <Preview />}
           </div>

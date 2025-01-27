@@ -1,5 +1,9 @@
 import './utils/globalFix';
-window.global ||= window;
+
+// Type-safe global assignment
+if (typeof window !== 'undefined') {
+  window.global = window as any;
+}
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
