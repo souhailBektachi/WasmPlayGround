@@ -27,7 +27,7 @@ A modern web-based IDE for WebAssembly development, allowing you to write, compi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/wasm-playground.git
+git clone https://github.com/souhailBektachi/wasm-playground.git
 cd wasm-playground
 ```
 
