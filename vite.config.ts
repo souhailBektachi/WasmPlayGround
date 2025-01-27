@@ -22,19 +22,14 @@ export default defineConfig({
       strict: false
     }
   },
-  optimizeDeps: {
-    exclude: ['@wasmer/sdk'],
-    esbuildOptions: {
-      target: 'esnext'
-    }
-  },
   worker: {
     format: 'es',
     plugins: () => [wasm()],
     rollupOptions: {
       output: {
         format: 'es',
-        inlineDynamicImports: true
+        inlineDynamicImports: true,
+        chunkFileNames: 'assets/worker-[hash].js'
       }
     }
   },
@@ -43,23 +38,13 @@ export default defineConfig({
       polyfill: false,
     },
     target: 'esnext',
-    assetsInlineLimit: 0,
-    sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('@wasmer/sdk')) {
-            return 'wasmer';
-          }
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        }
+        format: 'es',
+        entryFileNames: 'assets/[name].mjs',
+        chunkFileNames: 'assets/[name]-[hash].mjs',
+        assetFileNames: 'assets/[name].[ext]'
       }
-    },
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
     }
   }
 });
