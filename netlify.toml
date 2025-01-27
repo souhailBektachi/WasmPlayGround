@@ -1,5 +1,5 @@
 [[headers]]
-  for = "/assets/*.mjs"
+  for = "/assets/js/*.mjs"
   [headers.values]
     Content-Type = "application/javascript"
     Cross-Origin-Opener-Policy = "same-origin"
