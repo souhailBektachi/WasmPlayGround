@@ -1,50 +1,90 @@
-# React + TypeScript + Vite
+# WASM Playground 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web-based IDE for WebAssembly development, allowing you to write, compile, and test C code directly in your browser.
 
-Currently, two official plugins are available:
+![WASM Playground Screenshot](./screenshots/image.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features ✨
 
-## Expanding the ESLint configuration
+- **Live Compilation**: Write C code and compile it to WebAssembly in real-time
+- **Multiple Editors**: 
+  - C Code Editor
+  - JavaScript Editor
+  - HTML Preview
+- **Built-in Documentation**: Comprehensive WebAssembly compilation guide
+- **Modern UI**: Sleek dark theme with responsive layout
+- **Split Panels**: Resizable panels for better workspace organization
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Tech Stack 🛠️
 
-- Configure the top-level `parserOptions` property like this:
+- React + TypeScript
+- Tailwind CSS
+- Monaco Editor
+- WebAssembly
+- Clang (LLVM)
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Getting Started 🏁
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/wasm-playground.git
+cd wasm-playground
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+2. Install dependencies:
+```bash
+npm install
 ```
+
+3. Run the development server:
+```bash
+npm run dev
+```
+
+4. Open http://localhost:5173 in your browser
+
+## Usage 💡
+
+1. **Download Clang Package**:
+   - Click the "Download Clang Package" button when first using the application
+   - Wait for the package to initialize
+
+2. **Write Code**:
+   - Use the C editor to write your WebAssembly code
+   - Write JavaScript code to interact with your WASM module
+   - Add HTML markup for visualization
+
+3. **Compile & Run**:
+   - Click the "Compile & Run" button to build your WASM module
+   - View the results in the Preview panel
+
+## Project Structure 📁
+
+```
+src/
+├── components/        # React components
+├── services/         # Core services (Clang, etc.)
+├── store/            # State management
+└── styles/           # Global styles and theme
+```
+
+## Contributing 🤝
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License 📄
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments 👏
+
+- [LLVM Project](https://llvm.org/) for Clang
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) for the code editor
+- [React Resizable Panels](https://github.com/bvaughn/react-resizable-panels) for the panel layout
+
+---
+Made with ❤️ by [Souhail Bektachi]
