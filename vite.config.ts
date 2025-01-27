@@ -53,12 +53,15 @@ export default defineConfig({
         manualChunks: {
           wasmer: ['@wasmer/sdk']
         },
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        chunkFileNames: 'assets/[name].[hash].js',
-        entryFileNames: 'assets/[name].[hash].js',
+        format: 'es',
+        entryFileNames: 'assets/[name].[hash].mjs',
+        chunkFileNames: 'assets/[name].[hash].mjs',
+        assetFileNames: 'assets/[name].[hash][extname]'
       }
     },
-    sourcemap: true
+    sourcemap: true,
+    outDir: 'dist',
+    emptyOutDir: true
   },
   optimizeDeps: {
     exclude: ['@wasmer/sdk'],
@@ -86,5 +89,6 @@ export default defineConfig({
   },
   preview: {
     headers
-  }
+  },
+  base: '/'
 })
