@@ -1,3 +1,4 @@
+
 class ClangService {
     private static instance: ClangService;
     private worker: Worker;

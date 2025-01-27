@@ -24,6 +24,88 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
     }
 }
 
+const CLANG_WEBC_URL = 'https://cdn.wasmer.io/webcimages/c127b7bfc0041d02c94045f40be7fb4b3eeb98cede25fad96261b7b90a82f405.webc';
+const CLANG_CACHE_KEY = 'clang-webc-cache';
+const DB_NAME = 'WasmCache';
+const STORE_NAME = 'webcs';
+
+class WebCStorage {
+    private db: IDBDatabase | null = null;
+
+    async init(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME);
+                }
+            };
+        });
+    }
+
+    async get(key: string): Promise<Uint8Array | null> {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(key);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+        });
+    }
+
+    async set(key: string, value: Uint8Array): Promise<void> {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(value, key);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve();
+        });
+    }
+}
+
+const storage = new WebCStorage();
+
+async function downloadAndCacheWebC(): Promise<Uint8Array> {
+    const response = await fetch(CLANG_WEBC_URL);
+    if (!response.ok) {
+        throw new Error(`Failed to download WASM file: ${response.status} ${response.statusText}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    try {
+        await storage.set(CLANG_CACHE_KEY, uint8Array);
+        const verification = await storage.get(CLANG_CACHE_KEY);
+        if (!verification || verification.length !== uint8Array.length) {
+            throw new Error('Verification failed: stored data does not match');
+        }
+    } catch (error) {
+        throw error;
+    }
+    
+    return uint8Array;
+}
+
+async function getWebCData(): Promise<Uint8Array> {
+    const cached = await storage.get(CLANG_CACHE_KEY);
+    if (cached) return cached;
+    return await downloadAndCacheWebC();
+}
+
 let clang: Wasmer | null = null;
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
@@ -31,7 +113,8 @@ let initializationPromise: Promise<void> | null = null;
 async function initializeWasmer(): Promise<void> {
     try {
         await init();
-        clang = await Wasmer.fromRegistry("clang/clang");
+        const webcData = await getWebCData();
+        clang = await Wasmer.fromFile(webcData);
         isInitialized = true;
     } catch (error) {
         clang = null;
@@ -54,7 +137,7 @@ async function downloadAndInitialize(messageId: string): Promise<void> {
         await initializationPromise;
         self.postMessage({ type: 'init', status: 'success', messageId });
     } catch (maybeError: unknown) {
-        initializationPromise = null; // Reset for retry
+        initializationPromise = null; 
         const error = toErrorWithMessage(maybeError);
         self.postMessage({ 
             type: 'init', 
