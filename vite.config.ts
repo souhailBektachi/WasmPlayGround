@@ -73,8 +73,19 @@ export default defineConfig({
           }
           return 'assets/[name].[hash][extname]';
         },
-        chunkFileNames: 'assets/js/[name].[hash].js',
-        entryFileNames: 'assets/js/[name].[hash].js',
+        chunkFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'index') {
+            return 'assets/js/index.mjs';
+          }
+          return 'assets/js/[name].[hash].js';
+        },
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'index') {
+            return 'assets/js/index.mjs';
+          }
+          return 'assets/js/[name].[hash].js';
+        },
+        format: 'es'
       }
     },
     sourcemap: true
