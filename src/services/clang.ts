@@ -39,19 +39,7 @@ class ClangService {
         }
     }
 
-    public async checkConnectivity(): Promise<boolean> {
-        const testUrl = 'https://registry-cdn.wasmer.io/packages/clang/clang/manifest.json';
-        const startTime = performance.now();
-        try {
-            await fetch(testUrl);
-            const endTime = performance.now();
-            const latency = endTime - startTime;
-            return latency < 5000; 
-        } catch (error) {
-            console.error('Connectivity test failed:', error);
-            return false;
-        }
-    }
+   
 
     async downloadAndInitialize(): Promise<void> {
         if (this.isInitialized || this.isDownloading) return;
@@ -59,33 +47,26 @@ class ClangService {
         try {
             this.isDownloading = true;
             this.onProgressUpdate?.(0);
-            
-            const speed = await this.testConnectionSpeed();
-            const intervalConfig = {
-                slow: { interval: 200, increment: 0.5 },
-                medium: { interval: 100, increment: 1 },
-                fast: { interval: 50, increment: 2 }
-            }[speed];
 
-            let progress = 0;
             const progressInterval = setInterval(() => {
-                if (progress < 95) {
-                    progress = Math.min(95, progress + intervalConfig.increment);
-                    this.onProgressUpdate?.(progress);
-                }
-            }, intervalConfig.interval);
+                const progress = Math.min(95, (Date.now() - startTime) / 50);
+                this.onProgressUpdate?.(progress);
+            }, 100);
 
+            const startTime = Date.now();
             await init();
             this.clang = await Wasmer.fromRegistry("clang/clang");
             
             clearInterval(progressInterval);
             this.isInitialized = true;
             this.onProgressUpdate?.(100);
+        } catch (error) {
+            this.onProgressUpdate?.(0);
+            throw error;
         } finally {
             this.isDownloading = false;
         }
     }
-
 
     async compileC(code: string): Promise<WebAssembly.Instance> {
         const project = new Directory();
@@ -101,8 +82,8 @@ class ClangService {
                 "-Wl,--export-all",
                 "-Wl,--allow-undefined",
                 "-Wl,--import-memory",
-                "-Wl,--initial-memory=131072",    // Increased to 128KB
-                "-Wl,--max-memory=2097152",       // Max 2MB
+                "-Wl,--initial-memory=131072",
+                "-Wl,--max-memory=2097152",
                 "-Wl,--strip-all",
                 "-O3"
             ],
