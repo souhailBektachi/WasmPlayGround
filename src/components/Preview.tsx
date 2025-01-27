@@ -6,20 +6,12 @@ const Preview = () => {
 
   return (
     <EditorContainer title="Preview" language="Output">
-      <div style={{ 
-        backgroundColor: 'white',
-        height: '100%',
-        overflow: 'auto'
-      }}>
+      <div className="bg-white h-full overflow-auto">
         <iframe
           srcDoc={getCombinedContent()}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-          }}
+          className="w-full h-full border-none"
           title="preview"
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-same-origin"
         />
       </div>
     </EditorContainer>

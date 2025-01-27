@@ -11,27 +11,30 @@ interface TabsProps {
 
 const Tabs = ({ tabs, activeTab, onTabChange }: TabsProps) => {
   return (
-    <div style={{
-      display: 'flex',
-      backgroundColor: '#252526',
-      borderBottom: '1px solid #333',
-    }}>
+    <div className="flex bg-gradient-to-r from-[#1a1a1a] to-[#252525] border-b border-[#2d2d2d] px-1 pt-1">
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: activeTab === tab.id ? '#1e1e1e' : 'transparent',
-            border: 'none',
-            borderRight: '1px solid #333',
-            color: activeTab === tab.id ? '#fff' : '#999',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: activeTab === tab.id ? 500 : 400,
-          }}
+          className={`
+            group px-4 py-2 rounded-t text-sm transition-all duration-300 relative top-[1px] mr-1
+            hover:bg-opacity-80 focus:outline-none focus:ring-1 focus:ring-blue-500/50
+            ${activeTab === tab.id 
+              ? 'bg-[#1e1e1e] text-gray-200 font-medium shadow-inner' 
+              : 'bg-transparent text-gray-400 hover:bg-[#2d2d2d]'
+            }
+          `}
           onClick={() => onTabChange(tab.id)}
         >
-          {tab.label}
+          <span className="relative z-10 flex items-center gap-2">
+            {tab.label}
+            <div className={`
+              h-1 w-1 rounded-full transition-all duration-300
+              ${activeTab === tab.id 
+                ? 'bg-blue-500' 
+                : 'bg-transparent group-hover:bg-gray-400'
+              }
+            `} />
+          </span>
         </button>
       ))}
     </div>
