@@ -5,6 +5,7 @@ class ClangService {
     private clang!: Wasmer;
     private isInitialized: boolean = false;
     private isDownloading: boolean = false;
+    public onProgressUpdate?: (progress: number) => void;
 
     private constructor() { }
 
@@ -23,25 +24,60 @@ class ClangService {
         return this.isDownloading;
     }
 
+    private async testConnectionSpeed(): Promise<'slow' | 'medium' | 'fast'> {
+        const testUrl = 'https://registry-cdn.wasmer.io/packages/clang/clang/manifest.json';
+        const startTime = performance.now();
+        const startTime = performance.now();
+        try {
+            await fetch(testUrl);
+            const duration = performance.now() - startTime;
+            
+            if (duration < 300) return 'fast';
+            if (duration < 1000) return 'medium';
+            return 'slow';
+        } catch {
+            return 'slow';
+        }
+    }
+
     async downloadAndInitialize(): Promise<void> {
         if (this.isInitialized || this.isDownloading) return;
 
         try {
             this.isDownloading = true;
+            this.onProgressUpdate?.(0);
+            
+            const speed = await this.testConnectionSpeed();
+            const intervalConfig = {
+                slow: { interval: 200, increment: 0.5 },
+                medium: { interval: 100, increment: 1 },
+                fast: { interval: 50, increment: 2 }
+            }[speed];
+
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                if (progress < 95) {
+                    progress = Math.min(95, progress + intervalConfig.increment);
+                    this.onProgressUpdate?.(progress);
+                }
+            }, intervalConfig.interval);
+
             await init();
             this.clang = await Wasmer.fromRegistry("clang/clang");
+            
+            clearInterval(progressInterval);
             this.isInitialized = true;
+            this.onProgressUpdate?.(100);
         } finally {
             this.isDownloading = false;
         }
     }
 
-    async compileC(code: string): Promise<WebAssembly.Instance> {
-        if (!this.isInitialized) {
-            throw new Error("ClangService not initialized");
-        }
+    private generateCacheKey(code: string): string {
+        return btoa(code).slice(0, 32); // Simple hashing
+    }
 
-        try {
+    async compileC(code: string): Promise<WebAssembly.Instance> {
             const project = new Directory();
             await project.writeFile("wasm.c", code);
 
