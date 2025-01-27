@@ -61,8 +61,8 @@ export default defineConfig({
         },
         format: 'es',
         assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name]-[hash].mjs',
-        entryFileNames: 'assets/[name].mjs',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name].js',
       }
     },
     sourcemap: true
