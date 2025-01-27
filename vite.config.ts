@@ -14,8 +14,12 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
       'Cache-Control': 'max-age=31536000, immutable'
     }
+  },
+  worker: {
+    format: 'es'
   },
   build: {
     rollupOptions: {
@@ -31,6 +35,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@wasmer/sdk']
-  },
-  assetsInclude: ['**/*.webc']
+  }
 })

@@ -1,19 +1,46 @@
-import { init, Wasmer, Directory } from "@wasmer/sdk";
 
 class ClangService {
     private static instance: ClangService;
-    private clang!: Wasmer;
+    private worker: Worker;
     private isInitialized: boolean = false;
     private isDownloading: boolean = false;
     public onProgressUpdate?: (progress: number) => void;
+    private messageCallbacks: Map<string, (result: any) => void> = new Map();
 
-    private constructor() { }
+    private constructor() {
+        this.worker = new Worker(new URL('../workers/clang.worker.ts', import.meta.url), { type: 'module' });
+        this.worker.onmessage = this.handleWorkerMessage.bind(this);
+    }
 
     static getInstance(): ClangService {
         if (!ClangService.instance) {
             ClangService.instance = new ClangService();
         }
         return ClangService.instance;
+    }
+
+    private handleWorkerMessage(event: MessageEvent) {
+        const { type, status, messageId, wasm, error } = event.data;
+        const callback = this.messageCallbacks.get(messageId);
+        
+        if (callback) {
+            if (status === 'success') {
+                if (type === 'init') this.isInitialized = true;
+                callback({ success: true, data: wasm });
+            } else {
+                callback({ success: false, error });
+            }
+            this.messageCallbacks.delete(messageId);
+        }
+    }
+
+    private async sendWorkerMessage(type: string, data: any = {}): Promise<any> {
+        const messageId = Math.random().toString(36).substr(2, 9);
+        
+        return new Promise((resolve) => {
+            this.messageCallbacks.set(messageId, resolve);
+            this.worker.postMessage({ type, messageId, ...data });
+        });
     }
 
     isReady(): boolean {
@@ -23,23 +50,6 @@ class ClangService {
     isDownloadingPackage(): boolean {
         return this.isDownloading;
     }
-
-    private async testConnectionSpeed(): Promise<'slow' | 'medium' | 'fast'> {
-        const testUrl = 'https://registry-cdn.wasmer.io/packages/clang/clang/manifest.json';
-        const startTime = performance.now();
-        try {
-            await fetch(testUrl);
-            const duration = performance.now() - startTime;
-            
-            if (duration < 300) return 'fast';
-            if (duration < 1000) return 'medium';
-            return 'slow';
-        } catch {
-            return 'slow';
-        }
-    }
-
-   
 
     async downloadAndInitialize(): Promise<void> {
         if (this.isInitialized || this.isDownloading) return;
@@ -54,11 +64,11 @@ class ClangService {
             }, 100);
 
             const startTime = Date.now();
-            await init();
-            this.clang = await Wasmer.fromRegistry("clang/clang");
+            const result = await this.sendWorkerMessage('init');
             
             clearInterval(progressInterval);
-            this.isInitialized = true;
+            if (!result.success) throw new Error(result.error);
+            
             this.onProgressUpdate?.(100);
         } catch (error) {
             this.onProgressUpdate?.(0);
@@ -69,40 +79,9 @@ class ClangService {
     }
 
     async compileC(code: string): Promise<WebAssembly.Instance> {
-        const project = new Directory();
-        await project.writeFile("wasm.c", code);
+        const result = await this.sendWorkerMessage('compile', { code });
+        if (!result.success) throw new Error(result.error);
 
-        const instance = await this.clang.entrypoint?.run({
-            args: [
-                "project/wasm.c",
-                "-o", "project/example.wasm",
-                "--target=wasm32",
-                "-nostdlib",
-                "-Wl,--no-entry",
-                "-Wl,--export-all",
-                "-Wl,--allow-undefined",
-                "-Wl,--import-memory",
-                "-Wl,--initial-memory=131072",
-                "-Wl,--max-memory=2097152",
-                "-Wl,--strip-all",
-                "-O3"
-            ],
-            mount: { "/project": project }
-        });
-
-        if (!instance) {
-            throw new Error("Failed to create compilation instance");
-        }
-
-        const output = await instance.wait();
-        if (!output?.ok) {
-            throw new Error(`Compilation failed: ${output?.stderr}`);
-        }
-
-        const wasm = await project.readFile("example.wasm");
-        if (!wasm) {
-            throw new Error("No wasm file generated");
-        }
         const memory = new WebAssembly.Memory({ 
             initial: 2,     
             maximum: 32,    
@@ -116,8 +95,7 @@ class ClangService {
             }
         };
 
-        const wasmModule = await WebAssembly.instantiate(wasm, importObject);
-        
+        const wasmModule = await WebAssembly.instantiate(result.data, importObject);
         window.wasmMemory = memory;
         
         return wasmModule.instance;
