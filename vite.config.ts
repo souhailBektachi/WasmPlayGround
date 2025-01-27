@@ -13,8 +13,21 @@ export default defineConfig({
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cache-Control': 'max-age=31536000, immutable'
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js',
+      }
+    },
+    assetsInlineLimit: 0, 
+    target: 'esnext',
   },
   optimizeDeps: {
     exclude: ['@wasmer/sdk']
