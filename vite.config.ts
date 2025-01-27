@@ -9,29 +9,16 @@ export default defineConfig({
     react(),
     wasm(),
     topLevelAwait(),
-    tailwindcss()
+    tailwindcss(),
   ],
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Access-Control-Allow-Origin': '*'
     },
-    middlewareMode: false,
-    fs: {
-      strict: false
-    }
   },
-  worker: {
-    format: 'es',
-    plugins: () => [wasm()],
-    rollupOptions: {
-      output: {
-        format: 'es',
-        inlineDynamicImports: true,
-        chunkFileNames: 'assets/worker-[hash].js'
-      }
-    }
+  optimizeDeps: {
+    exclude: ['@wasmer/sdk'], 
   },
   build: {
     modulePreload: {
@@ -43,8 +30,8 @@ export default defineConfig({
         format: 'es',
         entryFileNames: 'assets/[name].mjs',
         chunkFileNames: 'assets/[name]-[hash].mjs',
-        assetFileNames: 'assets/[name].[ext]'
-      }
-    }
-  }
+        assetFileNames: 'assets/[name].[ext]',
+      },
+    },
+  },
 });
