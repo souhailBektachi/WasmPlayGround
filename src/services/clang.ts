@@ -1,4 +1,3 @@
-
 class ClangService {
     private static instance: ClangService;
     private worker: Worker;
@@ -6,6 +5,7 @@ class ClangService {
     private isDownloading: boolean = false;
     public onProgressUpdate?: (progress: number) => void;
     private messageCallbacks: Map<string, (result: any) => void> = new Map();
+    private maxRetries = 3;
 
     private constructor() {
         this.worker = new Worker(new URL('../workers/clang.worker.ts', import.meta.url), { type: 'module' });
@@ -54,27 +54,38 @@ class ClangService {
     async downloadAndInitialize(): Promise<void> {
         if (this.isInitialized || this.isDownloading) return;
 
-        try {
-            this.isDownloading = true;
-            this.onProgressUpdate?.(0);
+        let retries = 0;
+        while (retries < this.maxRetries) {
+            try {
+                this.isDownloading = true;
+                this.onProgressUpdate?.(0);
 
-            const progressInterval = setInterval(() => {
-                const progress = Math.min(95, (Date.now() - startTime) / 50);
-                this.onProgressUpdate?.(progress);
-            }, 100);
+                const progressInterval = setInterval(() => {
+                    const progress = Math.min(95, (Date.now() - startTime) / 50);
+                    this.onProgressUpdate?.(progress);
+                }, 100);
 
-            const startTime = Date.now();
-            const result = await this.sendWorkerMessage('init');
-            
-            clearInterval(progressInterval);
-            if (!result.success) throw new Error(result.error);
-            
-            this.onProgressUpdate?.(100);
-        } catch (error) {
-            this.onProgressUpdate?.(0);
-            throw error;
-        } finally {
-            this.isDownloading = false;
+                const startTime = Date.now();
+                const result = await this.sendWorkerMessage('init');
+                
+                clearInterval(progressInterval);
+                if (!result.success) throw new Error(result.error);
+                
+                this.onProgressUpdate?.(100);
+                return;
+            } catch (error) {
+                retries++;
+                if (retries === this.maxRetries) {
+                    this.onProgressUpdate?.(0);
+                    throw error;
+                }
+                // Wait before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } finally {
+                if (retries === this.maxRetries) {
+                    this.isDownloading = false;
+                }
+            }
         }
     }
 

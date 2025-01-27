@@ -24,27 +24,60 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
     }
 }
 
-let clang: Wasmer;
+let clang: Wasmer | null = null;
 let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
+
+async function initializeWasmer(): Promise<void> {
+    try {
+        await init();
+        clang = await Wasmer.fromRegistry("clang/clang");
+        isInitialized = true;
+    } catch (error) {
+        clang = null;
+        isInitialized = false;
+        throw error;
+    }
+}
 
 async function downloadAndInitialize(messageId: string): Promise<void> {
-    if (isInitialized) {
+    if (isInitialized && clang) {
         self.postMessage({ type: 'init', status: 'success', messageId });
         return;
     }
 
     try {
-        await init();
-        clang = await Wasmer.fromRegistry("clang/clang");
-        isInitialized = true;
+        if (!initializationPromise) {
+            initializationPromise = initializeWasmer();
+        }
+        
+        await initializationPromise;
         self.postMessage({ type: 'init', status: 'success', messageId });
     } catch (maybeError: unknown) {
+        initializationPromise = null; // Reset for retry
         const error = toErrorWithMessage(maybeError);
-        self.postMessage({ type: 'init', status: 'error', error: error.message, messageId });
+        self.postMessage({ 
+            type: 'init', 
+            status: 'error', 
+            error: error.message.includes('oneshot canceled') 
+                ? 'Initialization interrupted. Please try again.' 
+                : error.message,
+            messageId 
+        });
     }
 }
 
 async function compileC(code: string, messageId: string): Promise<void> {
+    if (!clang || !isInitialized) {
+        self.postMessage({ 
+            type: 'compile', 
+            status: 'error', 
+            error: 'Service not initialized', 
+            messageId 
+        });
+        return;
+    }
+
     try {
         const project = new Directory();
         await project.writeFile("wasm.c", code);
@@ -78,7 +111,14 @@ async function compileC(code: string, messageId: string): Promise<void> {
         self.postMessage({ type: 'compile', status: 'success', wasm, messageId });
     } catch (maybeError: unknown) {
         const error = toErrorWithMessage(maybeError);
-        self.postMessage({ type: 'compile', status: 'error', error: error.message, messageId });
+        self.postMessage({ 
+            type: 'compile', 
+            status: 'error', 
+            error: error.message.includes('oneshot canceled')
+                ? 'Compilation interrupted. Please try again.'
+                : error.message,
+            messageId 
+        });
     }
 }
 
