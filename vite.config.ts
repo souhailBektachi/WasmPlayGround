@@ -13,6 +13,7 @@ const headers = {
 };
 
 export default defineConfig({
+  base: '/',
   plugins: [
     react(),
     wasm(),
@@ -66,6 +67,9 @@ export default defineConfig({
           if (id.includes('clang.worker')) {
             return 'worker';
           }
+          if (id.includes('/src/main.tsx')) {
+            return 'index';
+          }
         },
         assetFileNames: (assetInfo) => {
           if (assetInfo.name && assetInfo.name.endsWith('.wasm')) {
@@ -73,18 +77,8 @@ export default defineConfig({
           }
           return 'assets/[name].[hash][extname]';
         },
-        chunkFileNames: (chunkInfo) => {
-          if (chunkInfo.name === 'index') {
-            return 'assets/js/index.mjs';
-          }
-          return 'assets/js/[name].[hash].js';
-        },
-        entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === 'index') {
-            return 'assets/js/index.mjs';
-          }
-          return 'assets/js/[name].[hash].js';
-        },
+        chunkFileNames: 'assets/js/[name].[hash].js',
+        entryFileNames: 'assets/js/[name].[hash].js',
         format: 'es'
       }
     },
