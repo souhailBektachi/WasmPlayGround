@@ -4,36 +4,87 @@ import wasm from "vite-plugin-wasm"
 import topLevelAwait from "vite-plugin-top-level-await"
 import tailwindcss from '@tailwindcss/vite'
 
+const headers = {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Resource-Policy': 'cross-origin',
+  'Cross-Origin-Isolation': 'enable-cross-origin-isolation',
+  'Cache-Control': 'no-cache'
+};
+
 export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    topLevelAwait(),tailwindcss()
+    topLevelAwait(),
+    tailwindcss(),
+    {
+      name: 'configure-response-headers',
+      configureServer(server) {
+        server.middlewares.use((_req, res, next) => {
+          Object.entries(headers).forEach(([key, value]) => {
+            res.setHeader(key, value);
+          });
+          next();
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((_req, res, next) => {
+          Object.entries(headers).forEach(([key, value]) => {
+            res.setHeader(key, value);
+          });
+          next();
+        });
+      }
+    }
   ],
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Resource-Policy': 'cross-origin',
-      'Cache-Control': 'max-age=31536000, immutable'
-    }
+    headers
   },
   worker: {
-    format: 'es'
+    format: 'es',
+    plugins: () => [wasm()],
   },
   build: {
+    target: 'esnext',
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          wasmer: ['@wasmer/sdk']
+        },
         assetFileNames: 'assets/[name].[hash].[ext]',
         chunkFileNames: 'assets/[name].[hash].js',
         entryFileNames: 'assets/[name].[hash].js',
       }
     },
-    assetsInlineLimit: 0, 
-    target: 'esnext',
+    sourcemap: true
   },
   optimizeDeps: {
-    exclude: ['@wasmer/sdk']
+    exclude: ['@wasmer/sdk'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      },
+      plugins: [
+        {
+          name: 'wasm-loader',
+          setup(build) {
+            build.onResolve({ filter: /\.wasm$/ }, args => {
+              return { path: args.path, namespace: 'wasm-binary' }
+            })
+          }
+        }
+      ]
+    }
+  },
+  resolve: {
+    alias: {
+      path: 'path-browserify',
+      fs: 'memfs'
+    }
+  },
+  preview: {
+    headers
   }
 })
