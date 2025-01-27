@@ -44,6 +44,12 @@ export default defineConfig({
   worker: {
     format: 'es',
     plugins: () => [wasm()],
+    rollupOptions: {
+      output: {
+        format: 'es',
+        inlineDynamicImports: true
+      }
+    }
   },
   build: {
     target: 'esnext',
@@ -56,6 +62,9 @@ export default defineConfig({
           }
           if (id.includes('wasmer_js')) {
             return 'wasmer-wasm';
+          }
+          if (id.includes('clang.worker')) {
+            return 'worker';
           }
         },
         assetFileNames: (assetInfo) => {
