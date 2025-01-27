@@ -8,37 +8,18 @@ interface EditorContainerProps {
 
 const EditorContainer = ({ children, title, language }: EditorContainerProps) => {
   return (
-    <div style={{
-      flex: 1,
-      backgroundColor: '#1e1e1e',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
+    <div className="flex-1 bg-[#1e1e1e] overflow-hidden flex flex-col rounded-md shadow-md h-full min-h-0">
       {(title || language) && (
-        <div style={{
-          padding: '0.5rem 1rem',
-          backgroundColor: '#252526',
-          borderBottom: '1px solid #333',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          {title && <span style={{ color: '#fff' }}>{title}</span>}
+        <div className="px-4 py-2 bg-[#252525] border-b border-[#2d2d2d] flex items-center justify-between">
+          {title && <span className="text-gray-200 font-medium">{title}</span>}
           {language && (
-            <span style={{
-              color: '#666',
-              fontSize: '0.8rem',
-              padding: '0.2rem 0.5rem',
-              backgroundColor: '#333',
-              borderRadius: '3px',
-            }}>
+            <span className="text-gray-400 text-xs px-2 py-1 bg-[#1e1e1e] rounded font-mono">
               {language}
             </span>
           )}
         </div>
       )}
-      <div style={{ flex: 1 }}>
+      <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
         {children}
       </div>
     </div>
