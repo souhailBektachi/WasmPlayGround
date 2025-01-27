@@ -4,9 +4,11 @@ interface EditorStore {
   htmlContent: string
   jsContent: string
   cContent: string
+  wasmInstance: WebAssembly.Instance | null
   setHtmlContent: (content: string) => void
   setJsContent: (content: string) => void
   setCContent: (content: string) => void
+  setWasmInstance: (instance: WebAssembly.Instance | null) => void
   getCombinedContent: () => string
 }
 
@@ -45,15 +47,19 @@ int add(int a, int b) {
     return a + b;
 }`,
 
+  wasmInstance: null,
   setHtmlContent: (content) => set({ htmlContent: content }),
   setJsContent: (content) => set({ jsContent: content }),
   setCContent: (content) => set({ cContent: content }),
+  setWasmInstance: (instance) => set({ wasmInstance: instance }),
   getCombinedContent: () => {
     const state = get();
     const htmlWithoutClosingBody = state.htmlContent.split('</body>')[0] || state.htmlContent;
     return `
       ${htmlWithoutClosingBody || ''}
       <script>
+        window.wasmInstance = parent.wasmInstance;
+        window.wasmMemory = parent.wasmMemory;
         ${state.jsContent}
       </script>
       </body></html>

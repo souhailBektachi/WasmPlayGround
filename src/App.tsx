@@ -16,7 +16,7 @@ function App() {
   const [activeLeftTab, setActiveLeftTab] = useState('c');
   const [activeRightTab, setActiveRightTab] = useState('html');
   const [isCompiling, setIsCompiling] = useState(false);
-  const { cContent } = useEditorStore();
+  const { cContent, setWasmInstance } = useEditorStore();
 
   const handleRunCode = async () => {
     const clang = ClangService.getInstance();
@@ -31,6 +31,7 @@ function App() {
       const wasmInstance = await clang.compileC(cContent);
       
       window.wasmInstance = wasmInstance as unknown as WasmInstance;
+      setWasmInstance(wasmInstance);
       setActiveRightTab('preview');
     } catch (error) {
       console.error('Compilation failed:', error);
