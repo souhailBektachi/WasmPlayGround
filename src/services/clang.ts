@@ -86,9 +86,6 @@ class ClangService {
         }
     }
 
-    private generateCacheKey(code: string): string {
-        return btoa(code).slice(0, 32); // Simple hashing
-    }
 
     async compileC(code: string): Promise<WebAssembly.Instance> {
         const project = new Directory();
