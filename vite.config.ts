@@ -9,7 +9,7 @@ const headers = {
   'Cross-Origin-Embedder-Policy': 'require-corp',
   'Cross-Origin-Resource-Policy': 'cross-origin',
   'Cross-Origin-Isolation': 'enable-cross-origin-isolation',
-  'Cache-Control': 'no-cache'
+  'Cache-Control': 'public, max-age=31536000, immutable'
 };
 
 export default defineConfig({
