@@ -8,7 +8,7 @@ class ClangService {
     private maxRetries = 3;
 
     private constructor() {
-        this.worker = new Worker(new URL('../workers/clang.worker.ts', import.meta.url), { type: 'module' });
+        this.worker = new Worker(new URL('../workers/clang.worker.ts?worker', import.meta.url), { type: 'module' });
         this.worker.onmessage = this.handleWorkerMessage.bind(this);
     }
 

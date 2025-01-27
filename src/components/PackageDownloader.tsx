@@ -9,13 +9,16 @@ const PackageDownloader = () => {
 
   useEffect(() => {
     const service = ClangService.getInstance();
-    service.onProgressUpdate = (progress) => {
+    
+    const handleProgress = (progress: number) => {
       setProgress(Math.round(progress));
       setIsDownloading(progress < 100);
       if (progress === 100) {
-        setIsReady(true);
+        setTimeout(() => setIsReady(true), 500); // Add delay to ensure initialization is complete
       }
     };
+    
+    service.onProgressUpdate = handleProgress;
     setIsReady(service.isReady());
 
     return () => {
@@ -28,13 +31,17 @@ const PackageDownloader = () => {
       setIsDownloading(true);
       setProgress(0);
       setError(null);
+      setIsReady(false);
       
       await ClangService.getInstance().downloadAndInitialize();
-      setIsReady(true);
     } catch (error) {
       console.error('Failed to download Clang:', error);
       setError(error instanceof Error ? error.message : 'Failed to download package');
+      setIsReady(false);
     } finally {
+      if (!error) {
+        setProgress(100);
+      }
       setIsDownloading(false);
     }
   };
@@ -58,7 +65,7 @@ const PackageDownloader = () => {
       >
         {isDownloading && (
           <div 
-            className="absolute left-0 top-0 bottom-0 bg-blue-500/30 transition-all duration-200"
+            className="absolute top-0 bottom-0 left-0 transition-all duration-200 bg-blue-500/30"
             style={{ width: `${progress}%` }}
           />
         )}
@@ -72,7 +79,7 @@ const PackageDownloader = () => {
             </>
           ) : isDownloading ? (
             <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
@@ -89,7 +96,7 @@ const PackageDownloader = () => {
         </div>
       </button>
       {error && (
-        <div className="text-red-500 text-sm">{error}</div>
+        <div className="text-sm text-red-500">{error}</div>
       )}
     </div>
   );

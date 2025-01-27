@@ -1,6 +1,5 @@
-import { init, Wasmer, Directory } from "@wasmer/sdk";
+import '../utils/globalFix';
 
-// Add type for error messages
 type ErrorWithMessage = {
     message: string;
 }
@@ -106,17 +105,21 @@ async function getWebCData(): Promise<Uint8Array> {
     return await downloadAndCacheWebC();
 }
 
-let clang: Wasmer | null = null;
+let wasmerModule: any = null;
+let clang: any = null;
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
 async function initializeWasmer(): Promise<void> {
     try {
-        await init();
+        wasmerModule = await import("@wasmer/sdk");
+        await wasmerModule.init();
+        
         const webcData = await getWebCData();
-        clang = await Wasmer.fromFile(webcData);
+        clang = await wasmerModule.Wasmer.fromFile(webcData);
         isInitialized = true;
     } catch (error) {
+        wasmerModule = null;
         clang = null;
         isInitialized = false;
         throw error;
@@ -151,7 +154,7 @@ async function downloadAndInitialize(messageId: string): Promise<void> {
 }
 
 async function compileC(code: string, messageId: string): Promise<void> {
-    if (!clang || !isInitialized) {
+    if (!clang || !isInitialized || !wasmerModule) {
         self.postMessage({ 
             type: 'compile', 
             status: 'error', 
@@ -162,7 +165,7 @@ async function compileC(code: string, messageId: string): Promise<void> {
     }
 
     try {
-        const project = new Directory();
+        const project = new wasmerModule.Directory();
         await project.writeFile("wasm.c", code);
 
         const instance = await clang.entrypoint?.run({

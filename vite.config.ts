@@ -1,46 +1,32 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import wasm from "vite-plugin-wasm"
-import topLevelAwait from "vite-plugin-top-level-await"
-import tailwindcss from '@tailwindcss/vite'
-
-const headers = {
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Resource-Policy': 'cross-origin',
-  'Cross-Origin-Isolation': 'enable-cross-origin-isolation',
-  'Cache-Control': 'public, max-age=31536000, immutable'
-};
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  base: '/',
   plugins: [
     react(),
     wasm(),
     topLevelAwait(),
-    tailwindcss(),
-    {
-      name: 'configure-response-headers',
-      configureServer(server) {
-        server.middlewares.use((_req, res, next) => {
-          Object.entries(headers).forEach(([key, value]) => {
-            res.setHeader(key, value);
-          });
-          next();
-        });
-      },
-      configurePreviewServer(server) {
-        server.middlewares.use((_req, res, next) => {
-          Object.entries(headers).forEach(([key, value]) => {
-            res.setHeader(key, value);
-          });
-          next();
-        });
-      }
-    }
+    tailwindcss()
   ],
   server: {
-    headers
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Access-Control-Allow-Origin': '*'
+    },
+    middlewareMode: false,
+    fs: {
+      strict: false
+    }
+  },
+  optimizeDeps: {
+    exclude: ['@wasmer/sdk'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   },
   worker: {
     format: 'es',
@@ -53,47 +39,27 @@ export default defineConfig({
     }
   },
   build: {
+    modulePreload: {
+      polyfill: false,
+    },
     target: 'esnext',
     assetsInlineLimit: 0,
+    sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
+        manualChunks(id) {
           if (id.includes('@wasmer/sdk')) {
-            return 'wasmer-sdk';
+            return 'wasmer';
           }
-          if (id.includes('wasmer_js')) {
-            return 'wasmer-wasm';
+          if (id.includes('node_modules')) {
+            return 'vendor';
           }
-          if (id.includes('clang.worker')) {
-            return 'worker';
-          }
-          if (id.includes('/src/main.tsx')) {
-            return 'index';
-          }
-        },
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name && assetInfo.name.endsWith('.wasm')) {
-            return 'assets/wasm/[name].[hash][extname]';
-          }
-          return 'assets/[name].[hash][extname]';
-        },
-        chunkFileNames: 'assets/js/[name].[hash].js',
-        entryFileNames: 'assets/js/[name].[hash].js',
-        format: 'es'
+        }
       }
     },
-    sourcemap: true
-  },
-  optimizeDeps: {
-    exclude: ['@wasmer/sdk']
-  },
-  resolve: {
-    alias: {
-      path: 'path-browserify',
-      fs: 'memfs'
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
     }
-  },
-  preview: {
-    headers
   }
-})
+});
