@@ -44,46 +44,34 @@ export default defineConfig({
   worker: {
     format: 'es',
     plugins: () => [wasm()],
-    rollupOptions: {
-      output: {
-        format: 'es',
-        entryFileNames: 'assets/[name].mjs'
-      }
-    }
   },
   build: {
     target: 'esnext',
     assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        manualChunks: {
-          wasmer: ['@wasmer/sdk']
+        manualChunks: (id) => {
+          if (id.includes('@wasmer/sdk')) {
+            return 'wasmer-sdk';
+          }
+          if (id.includes('wasmer_js')) {
+            return 'wasmer-wasm';
+          }
         },
-        format: 'es',
-        assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.wasm')) {
+            return 'assets/wasm/[name].[hash][extname]';
+          }
+          return 'assets/[name].[hash][extname]';
+        },
+        chunkFileNames: 'assets/js/[name].[hash].js',
+        entryFileNames: 'assets/js/[name].[hash].js',
       }
     },
     sourcemap: true
   },
   optimizeDeps: {
-    exclude: ['@wasmer/sdk'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      },
-      plugins: [
-        {
-          name: 'wasm-loader',
-          setup(build) {
-            build.onResolve({ filter: /\.wasm$/ }, args => {
-              return { path: args.path, namespace: 'wasm-binary' }
-            })
-          }
-        }
-      ]
-    }
+    exclude: ['@wasmer/sdk']
   },
   resolve: {
     alias: {

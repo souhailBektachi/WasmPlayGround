@@ -29,7 +29,6 @@ function App() {
       setIsCompiling(true);
       const wasmInstance = await clang.compileC(cContent);
       
-      // Use proper typing from our global.d.ts
       window.wasmInstance = wasmInstance as unknown as WasmInstance;
       setActiveRightTab('preview');
     } catch (error) {
