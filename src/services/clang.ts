@@ -1,5 +1,5 @@
 import { init, Wasmer, Directory } from "@wasmer/sdk";
-
+import libcImpl from './libc.c?raw';
 
 const CLANG_WEBC_URL = 'https://cdn.wasmer.io/webcimages/c127b7bfc0041d02c94045f40be7fb4b3eeb98cede25fad96261b7b90a82f405.webc';
 const CLANG_CACHE_KEY = 'clang-webc-cache';
@@ -78,15 +78,12 @@ class ClangService {
         const arrayBuffer = await response.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         
-        try {
             await this.storage.set(CLANG_CACHE_KEY, uint8Array);
             const verification = await this.storage.get(CLANG_CACHE_KEY);
             if (!verification || verification.length !== uint8Array.length) {
                 throw new Error('Verification failed: stored data does not match');
             }
-        } catch (error) {
-            throw error;
-        }
+        
         
         return uint8Array;
     }
@@ -150,7 +147,8 @@ class ClangService {
 
         try {
             const project = new Directory();
-            await project.writeFile("wasm.c", code);
+            const fullCode = `${libcImpl}\n${code}`;
+            await project.writeFile("wasm.c", fullCode);
 
             const instance = await this.wasmer.entrypoint?.run({
                 args: [
@@ -158,13 +156,13 @@ class ClangService {
                     "-o", "project/example.wasm",
                     "--target=wasm32",
                     "-nostdlib",
+                    "-fno-builtin",
                     "-Wl,--no-entry",
                     "-Wl,--export-all",
                     "-Wl,--allow-undefined",
                     "-Wl,--import-memory",
-                    "-Wl,--initial-memory=131072",
-                    "-Wl,--max-memory=2097152",
-                    "-Wl,--strip-all",
+                    "-Wl,--initial-memory=4194304", // Increased to 4MB
+                    "-Wl,--max-memory=16777216",    // Increased to 16MB
                     "-O3"
                 ],
                 mount: { "/project": project }
@@ -179,8 +177,8 @@ class ClangService {
             if (!wasm) throw new Error("No wasm file generated");
 
             const memory = new WebAssembly.Memory({ 
-                initial: 2,
-                maximum: 32,
+                initial: 64,    // Increased to match linker settings
+                maximum: 256,   // Increased to match linker settings
                 shared: true
             });
 
